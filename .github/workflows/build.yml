@@ -155,8 +155,7 @@ jobs:
           image-ref: matesaitban/laboratorio-final:latest
           format: 'table'
           severity: 'CRITICAL,HIGH,MEDIUM'
-
-  DAST:
+            DAST:
     needs: ImageSecurity
     runs-on: ubuntu-latest
     steps:
@@ -180,6 +179,7 @@ jobs:
           target: 'http://localhost:3000/'
           cmd_options: '-J report_json.json -w report_md.md -r report_html.html'
           fail_action: false
+          publishArtifacts: false
 
       - name: Verificar archivos de reporte
         run: ls -lh
