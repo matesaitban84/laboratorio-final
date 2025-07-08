@@ -5,8 +5,7 @@ on:
       - main
 
 jobs:
-
- # BUILD 
+   # BUILD 
 BUILD:
     runs-on: ubuntu-latest
     steps:
@@ -219,4 +218,3 @@ DAST:
             report_json.json
             report_md.md
             report_html.html
-            
