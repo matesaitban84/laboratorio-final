@@ -5,8 +5,9 @@ on:
       - main
 
 jobs:
-  # BUILDER
-    BUILDER:
+
+  # BUILD 
+BUILD:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
@@ -78,7 +79,7 @@ jobs:
 #          fi
 
   # --------------------------------- Analisis de Composición de Software ---------------------------------
-  SCA:
+SCA:
     needs: BUILD
     runs-on: ubuntu-latest
     steps:
