@@ -53,8 +53,8 @@ jobs:
       - name: Ejecutar análisis SonarCloud
         run: |
           npx sonarqube-scanner \
-            -Dsonar.projectKey=laboratorio-finalv1 \
-            -Dsonar.organization=devsecopsusachfm \
+            -Dsonar.projectKey=matesaitban84_laboratorio-final \
+            -Dsonar.organization=matesaitban8484 \
             -Dsonar.sources=. \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
@@ -222,4 +222,3 @@ jobs:
             report_json.json
             report_md.md
             report_html.html
-            
