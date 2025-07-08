@@ -64,7 +64,7 @@ jobs:
             | jq '.total')
           echo "Vulnerabilidades Críticas/Altas/Medias Encontradas: $issueCount"
 
-  SCA:
+    SCA:
     needs: BUILD
     runs-on: ubuntu-latest
     steps:
@@ -87,9 +87,7 @@ jobs:
           path: '.'
           format: 'ALL'
           out: 'reports'
-          args: >
-            --failOnCVSS 7
-            --enableRetired
+          args: --failOnCVSS 7 --enableRetired
 
       - name: Upload Dependency Check Report
         uses: actions/upload-artifact@v4
@@ -109,86 +107,3 @@ jobs:
           medium=$(jq '[.dependencies[].vulnerabilities[]? | select(.severity == "moderate")] | length' "$report")
           echo "Vulnerabilidades Críticas/Altas: $critical"
           echo "Vulnerabilidades Medias: $medium"
-
-  DockerBuild:
-    needs: BUILD
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifact
-          path: ${{ github.workspace }}/.next
-          include-hidden-files: true
-
-      - name: Build Docker Image
-        run: docker build --tag matesaitban/laboratorio-final:latest .
-
-      - name: Docker Login
-        uses: docker/login-action@v3.0.0
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Push Docker Image
-        run: docker push matesaitban/laboratorio-final:latest
-
-  ImageSecurity:
-    needs: DockerBuild
-    runs-on: ubuntu-latest
-    steps:
-      - name: Docker Login
-        uses: docker/login-action@v3.0.0
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Docker Pull
-        run: docker pull matesaitban/laboratorio-final:latest
-
-      - name: Run Trivy Scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: matesaitban/laboratorio-final:latest
-          format: 'table'
-          severity: 'CRITICAL,HIGH,MEDIUM'
-            DAST:
-    needs: ImageSecurity
-    runs-on: ubuntu-latest
-    steps:
-      - name: Docker Login
-        uses: docker/login-action@v3.0.0
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Docker Pull
-        run: docker pull matesaitban/laboratorio-final:latest
-
-      - name: Desplegar aplicación
-        run: |
-          docker run -d -p 3000:3000 --name devsecops-app matesaitban/laboratorio-final:latest
-          sleep 15
-
-      - name: Ejecutar escaneo ZAP
-        uses: zaproxy/action-baseline@v0.11.0
-        with:
-          target: 'http://localhost:3000/'
-          cmd_options: '-J report_json.json -w report_md.md -r report_html.html'
-          fail_action: false
-          publishArtifacts: false
-
-      - name: Verificar archivos de reporte
-        run: ls -lh
-
-      - name: Subir reporte ZAP
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-report
-          path: |
-            report_json.json
-            report_md.md
-            report_html.html
