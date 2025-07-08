@@ -5,7 +5,9 @@ on:
       - main
 
 jobs:
-  CONSTRUCCION:
+  # --------------------------------- BUILD ---------------------------------
+
+  BUILD:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
@@ -77,8 +79,8 @@ jobs:
 #          fi
 
   # --------------------------------- Analisis de Composición de Software ---------------------------------
-Analisis de Composición de Software:
-    needs: CONSTRUCCION
+  SCA:
+    needs: BUILD
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -115,7 +117,7 @@ Analisis de Composición de Software:
           report="reports/dependency-check-report.json"
 
           if [ ! -f "$report" ]; then
-            echo "No se encuentra Reporte de Dependency Check. Fallo Análisis SCA."
+            echo "No se Encontro Reporte de Dependency Check. Fallo Análisis SCA."
             exit 1
           fi
 
@@ -133,8 +135,9 @@ Analisis de Composición de Software:
 #          else
 #            echo "No se encontraron vulnerabilidades críticas, altas ni medias. Continuando..."
 #          fi
-#   DockerBuild
-    DockerBuild:
+  # --------------------------------- Docker Build ---------------------------------
+
+  DockerBuild:
     needs: BUILD
     runs-on: ubuntu-latest
     steps:
@@ -161,9 +164,9 @@ Analisis de Composición de Software:
       - name: Push Docker Image
         run: |
           docker push matesaitban/laboratorio-final:latest
-  # --------------------------------- Imagen de Seguridad ---------------------------------
+  # --------------------------------- Image Security ---------------------------------
 
-ImageSecurity:
+  ImageSecurity:
     needs: DockerBuild
     runs-on: ubuntu-latest
     steps:
@@ -187,7 +190,7 @@ ImageSecurity:
           severity: 'CRITICAL,HIGH,MEDIUM'
   # --------------------------------- DAST ---------------------------------
 
-DAST:
+  DAST:
     needs: ImageSecurity
     runs-on: ubuntu-latest  # usa self-hosted si tienes problemas con localhost
     steps:
