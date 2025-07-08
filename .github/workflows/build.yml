@@ -2,7 +2,7 @@ name: Build
 on:
   push:
     branches:
-      - main
+      - realizacion-fork
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
