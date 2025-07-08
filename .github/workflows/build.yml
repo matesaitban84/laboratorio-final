@@ -1,23 +1,66 @@
-name: Build
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types: [opened, synchronize, reopened]
-jobs:
-  sonarqube:
-    name: SonarQube
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  BUILD:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Set up Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '22.17.0'
 
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Instalar dependencias (si no están instaladas)
+          run: npm install
+
+        - name: Compilar y empaquetar
+          run: |
+            npm run build
+
+        - name: Upload build output
+          uses: actions/upload-artifact@master
+          with:
+            name: build-artifact
+            path: ${{ github.workspace }}/.next
+            include-hidden-files: true
+
+        - name: Validando existencia de proyecto en SonarCloud
+          id: validateProjectOnSonar
+          run: |
+            #pwd
+            #ls -R
+            set +e
+            curl -f -X POST -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/projects/create' -d 'name=laboratorio-finalv1' -d 'project=laboratorio-finalv1' -d 'organization=devsecopsusachfm' -d 'visibility=public'
+            if [ $? -ne 0 ]; then
+            echo "Proyecto ya existe en Sonarcloud"
+            echo "::set-output name=proyectoExiste::1"
+            else
+            echo "Proyecto laboratorio-finalv1 creado exitosamente en Sonarcloud"
+            
+            echo "Se establece rama main como rama por defecto"
+            curl -X POST -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/project_branches/rename' -d 'name=main' -d 'project=laboratorio-finalv1'
+            fi
+            set -e
+
+        - name: Ejecutar análisis SonarCloud
+          run: |
+            npx sonarqube-scanner \
+              -Dsonar.projectKey=laboratorio-finalv1 \
+              -Dsonar.organization=devsecopsusachfm \
+              -Dsonar.sources=. \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+              -Dsonar.branch.name=main
+
+        - name: Validando resultado de SonarCloud
+          run: |
+            projectKey="laboratorio-finalv1"
+            branchName="main"
+            
+            issueCount=$(curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
+              "https://sonarcloud.io/api/issues/search?componentKeys=${projectKey}&branch=${branchName}&types=VULNERABILITY&severities=BLOCKER,CRITICAL,MAJOR" \
+              | jq '.total')
+
+            echo "Vulnerabilidades críticas/altas/medias encontradas: $issueCount"
   SCA:
       needs: BUILD
       runs-on: ubuntu-latest
@@ -67,11 +110,3 @@ jobs:
 
             echo "Vulnerabilidades críticas/altas: $critical"
             echo "Vulnerabilidades medias: $medium"
-
-  #          if [ "$critical" -gt 0 ] || [ "$high" -gt 0 ] || [ "$medium" -gt 0 ]; then
-  #            echo "Se encontraron vulnerabilidades Críticas, Altas o Medias en dependencias. Deteniendo el pipeline..."
-  #            exit 1
-  #          else
-  #            echo "No se encontraron vulnerabilidades críticas, altas ni medias. Continuando..."
-  #          fi
-  
