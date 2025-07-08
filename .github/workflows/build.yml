@@ -3,9 +3,9 @@ on:
   push:
     branches:
       - main
-
 jobs:
-   # BUILD 
+
+# BUILD 
 BUILD:
     runs-on: ubuntu-latest
     steps:
