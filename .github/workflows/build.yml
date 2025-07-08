@@ -164,7 +164,7 @@ jobs:
         run: |
           docker push matesaitban/laboratorio-final:latest
   # Image Security
-  Image Security:
+  ImageSecurity:
     needs: DockerBuild
     runs-on: ubuntu-latest
     steps:
@@ -188,7 +188,7 @@ jobs:
           severity: 'CRITICAL,HIGH,MEDIUM'
   # DAST
   DAST:
-    needs: Image Security
+    needs: ImageSecurity
     runs-on: ubuntu-latest  # usa self-hosted si tienes problemas con localhost
     steps:
 
