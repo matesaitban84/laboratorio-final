@@ -164,8 +164,7 @@ DockerBuild:
         run: |
           docker push matesaitban/laboratorio-final:latest
   # --------------------------------- Image Security ---------------------------------
-
-  ImageSecurity:
+ImageSecurity:
     needs: DockerBuild
     runs-on: ubuntu-latest
     steps:
@@ -188,7 +187,6 @@ DockerBuild:
          # exit-code: '1'
           severity: 'CRITICAL,HIGH,MEDIUM'
   # --------------------------------- DAST ---------------------------------
-
   DAST:
     needs: ImageSecurity
     runs-on: ubuntu-latest  # usa self-hosted si tienes problemas con localhost
