@@ -78,7 +78,7 @@ jobs:
 #            echo "Sin Vulnerabilidades Críticas, Altas Ni Medias. Continuar...."
 #          fi
 
-  # --------------------------------- Analisis de Composición de Software ---------------------------------
+  # Analisis de Composición de Software
   SCA:
     needs: BUILD
     runs-on: ubuntu-latest
@@ -135,8 +135,8 @@ jobs:
 #          else
 #            echo "No se encontraron vulnerabilidades críticas, altas ni medias. Continuando..."
 #          fi
-  # --------------------------------- Docker Build ---------------------------------
-DockerBuild:
+  # Docker Build 
+  DockerBuild:
     needs: BUILD
     runs-on: ubuntu-latest
     steps:
