@@ -134,8 +134,7 @@ Analisis de Composición de Software:
 #            echo "No se encontraron vulnerabilidades críticas, altas ni medias. Continuando..."
 #          fi
 #   DockerBuild
-
-DockerBuild:
+    DockerBuild:
     needs: BUILD
     runs-on: ubuntu-latest
     steps:
