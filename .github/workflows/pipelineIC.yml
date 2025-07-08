@@ -136,7 +136,7 @@ jobs:
 #            echo "No se encontraron vulnerabilidades críticas, altas ni medias. Continuando..."
 #          fi
   # Docker Build 
-  DockerBuild:
+  Docker Build:
     needs: BUILD
     runs-on: ubuntu-latest
     steps:
@@ -164,7 +164,7 @@ jobs:
         run: |
           docker push matesaitban/laboratorio-final:latest
   # Image Security
-  ImageSecurity:
+  Image Security:
     needs: DockerBuild
     runs-on: ubuntu-latest
     steps:
@@ -188,7 +188,7 @@ jobs:
           severity: 'CRITICAL,HIGH,MEDIUM'
   # DAST
   DAST:
-    needs: ImageSecurity
+    needs: Image Security
     runs-on: ubuntu-latest  # usa self-hosted si tienes problemas con localhost
     steps:
 
