@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-  # BUILD 
+ # BUILD 
 BUILD:
     runs-on: ubuntu-latest
     steps:
@@ -187,7 +187,7 @@ ImageSecurity:
          # exit-code: '1'
           severity: 'CRITICAL,HIGH,MEDIUM'
   # --------------------------------- DAST ---------------------------------
-  DAST:
+DAST:
     needs: ImageSecurity
     runs-on: ubuntu-latest  # usa self-hosted si tienes problemas con localhost
     steps:
@@ -219,3 +219,4 @@ ImageSecurity:
             report_json.json
             report_md.md
             report_html.html
+            
