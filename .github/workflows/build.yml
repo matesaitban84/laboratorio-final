@@ -1,11 +1,11 @@
 name: Workflow
-
 on:
   push:
     branches:
       - main
 
 jobs:
+  #  BUILDER
 
   BUILD:
     runs-on: ubuntu-latest
@@ -18,34 +18,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Instalación de Dependencias
+      - name: Instalacion de Dependencias (si no está instalada)
         run: npm install
 
       - name: Compila y empaqueta
-        run: npm run build
+        run: |
+          npm run build
 
       - name: Upload build output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@master
         with:
           name: build-artifact
           path: ${{ github.workspace }}/.next
           include-hidden-files: true
 
-      - name: Validación existencia proyecto SonarCloud
+      - name: Validacion Existencia Proyecto Sonar Cloud
         id: validateProjectOnSonar
         run: |
+          #pwd
+          #ls -R
           set +e
           curl -f -X POST -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/projects/create' -d 'name=laboratorio-finalv1' -d 'project=laboratorio-finalv1' -d 'organization=devsecopsusachfm' -d 'visibility=public'
           if [ $? -ne 0 ]; then
-            echo "Proyecto ya existe en SonarCloud"
-            echo "::set-output name=proyectoSiExiste::1"
+          echo "Proyecto ya existe en Sonarcloud"
+          echo "::set-output name=proyectoSiExiste::1"
           else
-            echo "Proyecto laboratorio-final Creado Exitosamente en Sonar Cloud"
-            curl -X POST -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/project_branches/rename' -d 'name=main' -d 'project=laboratorio-finalv1'
+          echo "Proyecto laboratorio-final Creado Exitosamente en Sonar Cloud"
+          
+          echo "Rama main como rama por defecto"
+          curl -X POST -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/project_branches/rename' -d 'name=main' -d 'project=laboratorio-finalv1'
           fi
           set -e
 
-      - name: Ejecutar análisis SonarCloud
+      - name: Ejecutar Análisis Sonar Cloud
         run: |
           npx sonarqube-scanner \
             -Dsonar.projectKey=matesaitban84_laboratorio-final \
@@ -55,16 +60,26 @@ jobs:
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.branch.name=main
 
-      - name: Validar resultado SonarCloud
+      - name: Validando Resultado Sonar Cloud
         run: |
           projectKey="laboratorio-final"
           branchName="main"
+          
           issueCount=$(curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
             "https://sonarcloud.io/api/issues/search?componentKeys=${projectKey}&branch=${branchName}&types=VULNERABILITY&severities=BLOCKER,CRITICAL,MAJOR" \
             | jq '.total')
+
           echo "Vulnerabilidades Críticas/Altas/Medias Encontradas: $issueCount"
 
-    SCA:
+#          if [ "$issueCount" -gt 0 ]; then
+#            echo "Vulnerabilidades Encontradas Críticas, Altas o Medias. Detener Pipeline..."
+#            exit 1
+#          else
+#            echo "Sin Vulnerabilidades Críticas, Altas Ni Medias. Continuar...."
+#          fi
+
+  # Analisis de Composición de Software
+  SCA:
     needs: BUILD
     runs-on: ubuntu-latest
     steps:
@@ -72,7 +87,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@master
         with:
           name: build-artifact
           path: ${{ github.workspace }}/.next
@@ -87,23 +102,148 @@ jobs:
           path: '.'
           format: 'ALL'
           out: 'reports'
-          args: --failOnCVSS 7 --enableRetired
+          args: >
+            --failOnCVSS 7
+            --enableRetired
 
       - name: Upload Dependency Check Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@master
         with:
-          name: dependency-check-report
+          name: dependecy-check-report
           path: ${{ github.workspace }}/reports
 
       - name: Validar resultado Dependency Check
         run: |
           report="reports/dependency-check-report.json"
+
           if [ ! -f "$report" ]; then
-            echo "No se encontró reporte de Dependency Check. Fallo análisis SCA."
+            echo "No se Encontro Reporte de Dependency Check. Fallo Análisis SCA."
             exit 1
           fi
+
+          # Modifica los valores correctos de severidadcriticidad
           critical=$(jq '[.dependencies[].vulnerabilities[]? | select(.severity == "high")] | length' "$report")
           high=$(jq '[.dependencies[].vulnerabilities[]? | select(.severity == "high")] | length' "$report")
           medium=$(jq '[.dependencies[].vulnerabilities[]? | select(.severity == "moderate")] | length' "$report")
+
           echo "Vulnerabilidades Críticas/Altas: $critical"
           echo "Vulnerabilidades Medias: $medium"
+
+#          if [ "$critical" -gt 0 ] || [ "$high" -gt 0 ] || [ "$medium" -gt 0 ]; then
+#            echo "Se encontraron vulnerabilidades Críticas, Altas o Medias en dependencias. Deteniendo el pipeline..."
+#            exit 1
+#          else
+#            echo "No se encontraron vulnerabilidades críticas, altas ni medias. Continuando..."
+#          fi
+  # Docker Build 
+  DockerBuild:
+    needs: BUILD
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Download build artifact
+        uses: actions/download-artifact@master
+        with:
+          name: build-artifact
+          path: ${{ github.workspace }}/.next
+          include-hidden-files: true
+
+      - name: Build Docker Image
+        run: |
+          docker build --tag matesaitban/laboratorio-final:latest .
+
+      - name: Docker Login
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker Image
+        run: |
+          docker push matesaitban/laboratorio-final:latest
+  # Image Security
+  ImageSecurity:
+    needs: DockerBuild
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Docker Login
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Docker Pull
+        run: |
+          docker pull matesaitban/laboratorio-final:latest
+
+      - name: Run Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: matesaitban/laboratorio-final:latest
+          format: 'table'
+         # exit-code: '1'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+  # DAST
+  DAST:
+    needs: ImageSecurity
+    runs-on: ubuntu-latest  # usar self-hosted si tiene inconvenientes con localhost
+    steps:
+
+      - name: Docker Login
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Docker Pull
+        run: docker pull matesaitban/laboratorio-final:latest
+
+      - name: Desplegar aplicación
+        run: |
+          docker run -d -p 3000:3000 --name devsecops-app matesaitban/laboratorio-final:latest
+          sleep 30  # Esperar que arranque correctamente
+
+      - name: OWASP ZAP Scan
+  on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  zap_scan:
+    name: Run OWASP ZAP Baseline Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Start target application
+        run: |
+          docker-compose up -d
+          sleep 10  # esperar que arranque (ajusta si es necesario)
+
+      - name: Run OWASP ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.11.0
+        with:
+          target: 'http://localhost:3000/'
+          cmd_options: '-J report_json.json -w report_md.md -r report_html.html'
+          fail_action: false
+
+      - name: List scan result files
+        run: ls -la
+
+      - name: Upload OWASP ZAP Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: |
+            report_json.json
+            report_md.md
+            report_html.html
