@@ -2,11 +2,12 @@ name: Workflow
 on:
   push:
     branches:
-      - main
-jobs:
+      - feat-sast
 
-# BUILD 
-BUILD:
+jobs:
+  #  BUILDER
+
+  BUILD:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
