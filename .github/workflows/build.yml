@@ -163,8 +163,8 @@ jobs:
       - name: Push Docker Image
         run: |
           docker push matesaitban/laboratorio-final:latest
-  # --------------------------------- Image Security ---------------------------------
-ImageSecurity:
+  # Image Security
+  ImageSecurity:
     needs: DockerBuild
     runs-on: ubuntu-latest
     steps:
@@ -186,8 +186,8 @@ ImageSecurity:
           format: 'table'
          # exit-code: '1'
           severity: 'CRITICAL,HIGH,MEDIUM'
-  # --------------------------------- DAST ---------------------------------
-DAST:
+  # DAST
+  DAST:
     needs: ImageSecurity
     runs-on: ubuntu-latest  # usa self-hosted si tienes problemas con localhost
     steps:
