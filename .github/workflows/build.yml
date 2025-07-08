@@ -207,8 +207,7 @@ jobs:
           sleep 30  # Esperar que arranque correctamente
 
       - name: OWASP ZAP Scan
-
-on:
+  on:
   push:
     branches:
       - main
