@@ -153,7 +153,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build --tag frantanza/usach-devsecops:latest .
+          docker build --tag matesaitban/laboratorio-final:latest .
 
       - name: Docker Login
         uses: docker/login-action@v3.0.0
@@ -163,7 +163,7 @@ jobs:
 
       - name: Push Docker Image
         run: |
-          docker push frantanza/usach-devsecops:latest
+          docker push matesaitban/laboratorio-final:latest
   # --------------------------------- Image Security ---------------------------------
 
   ImageSecurity:
@@ -179,12 +179,12 @@ jobs:
 
       - name: Docker Pull
         run: |
-          docker pull frantanza/usach-devsecops:latest
+          docker pull matesaitban/laboratorio-final:latest
 
       - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: frantanza/usach-devsecops:latest
+          image-ref: matesaitban/laboratorio-final:latest
           format: 'table'
          # exit-code: '1'
           severity: 'CRITICAL,HIGH,MEDIUM'
@@ -202,11 +202,11 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Docker Pull
-        run: docker pull frantanza/usach-devsecops:latest
+        run: docker pull matesaitban/laboratorio-final:latest*
 
       - name: Desplegar aplicación
         run: |
-          docker run -d -p 3000:3000 --name devsecops-app frantanza/usach-devsecops:latest
+          docker run -d -p 3000:3000 --name devsecops-app matesaitban/laboratorio-final:latest*
           sleep 30  # Esperar que arranque correctamente
 
       - name: OWASP ZAP Scan
@@ -222,3 +222,4 @@ jobs:
             report_json.json
             report_md.md
             report_html.html
+            
