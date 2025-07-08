@@ -18,10 +18,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Instalar dependencias (si no están instaladas)
+      - name: Instalacion de Dependencias (si no está instalada)
         run: npm install
 
-      - name: Compilar y empaquetar
+      - name: Compila y empaqueta
         run: |
           npm run build
 
@@ -32,7 +32,7 @@ jobs:
           path: ${{ github.workspace }}/.next
           include-hidden-files: true
 
-      - name: Validando existencia de proyecto en SonarCloud
+      - name: Validacion Existencia Proyecto Sonar Cloud
         id: validateProjectOnSonar
         run: |
           #pwd
@@ -41,16 +41,16 @@ jobs:
           curl -f -X POST -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/projects/create' -d 'name=laboratorio-finalv1' -d 'project=laboratorio-finalv1' -d 'organization=devsecopsusachfm' -d 'visibility=public'
           if [ $? -ne 0 ]; then
           echo "Proyecto ya existe en Sonarcloud"
-          echo "::set-output name=proyectoExiste::1"
+          echo "::set-output name=proyectoSiExiste::1"
           else
-          echo "Proyecto laboratorio-finalv1 creado exitosamente en Sonarcloud"
+          echo "Proyecto laboratorio-final Creado Exitosamente en Sonar Cloud"
           
-          echo "Se establece rama main como rama por defecto"
+          echo "Rama main como rama por defecto"
           curl -X POST -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/project_branches/rename' -d 'name=main' -d 'project=laboratorio-finalv1'
           fi
           set -e
 
-      - name: Ejecutar análisis SonarCloud
+      - name: Ejecutar Análisis Sonar Cloud
         run: |
           npx sonarqube-scanner \
             -Dsonar.projectKey=matesaitban84_laboratorio-final \
@@ -60,25 +60,25 @@ jobs:
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.branch.name=main
 
-      - name: Validando resultado de SonarCloud
+      - name: Validando Resultado Sonar Cloud
         run: |
-          projectKey="laboratorio-finalv1"
+          projectKey="laboratorio-final"
           branchName="main"
           
           issueCount=$(curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
             "https://sonarcloud.io/api/issues/search?componentKeys=${projectKey}&branch=${branchName}&types=VULNERABILITY&severities=BLOCKER,CRITICAL,MAJOR" \
             | jq '.total')
 
-          echo "Vulnerabilidades críticas/altas/medias encontradas: $issueCount"
+          echo "Vulnerabilidades Críticas/Altas/Medias Encontradas: $issueCount"
 
 #          if [ "$issueCount" -gt 0 ]; then
-#            echo "Se encontraron vulnerabilidades críticas, altas o medias. Deteniendo el pipeline..."
+#            echo "Vulnerabilidades Encontradas Críticas, Altas o Medias. Detener Pipeline..."
 #            exit 1
 #          else
-#            echo "No se encontraron vulnerabilidades críticas, altas ni medias. Continuando..."
+#            echo "Sin Vulnerabilidades Críticas, Altas Ni Medias. Continuar...."
 #          fi
 
-  # --------------------------------- SCA ---------------------------------
+  # --------------------------------- Analisis de Composición de Software ---------------------------------
   SCA:
     needs: BUILD
     runs-on: ubuntu-latest
@@ -117,17 +117,17 @@ jobs:
           report="reports/dependency-check-report.json"
 
           if [ ! -f "$report" ]; then
-            echo "No se encontró el reporte de Dependency Check. Falla el análisis SCA."
+            echo "No se encuentra Reporte de Dependency Check. Fallo Análisis SCA."
             exit 1
           fi
 
-          # Modificado para usar los valores correctos de severidad
+          # Modifica los valores correctos de severidadcriticidad
           critical=$(jq '[.dependencies[].vulnerabilities[]? | select(.severity == "high")] | length' "$report")
           high=$(jq '[.dependencies[].vulnerabilities[]? | select(.severity == "high")] | length' "$report")
           medium=$(jq '[.dependencies[].vulnerabilities[]? | select(.severity == "moderate")] | length' "$report")
 
-          echo "Vulnerabilidades críticas/altas: $critical"
-          echo "Vulnerabilidades medias: $medium"
+          echo "Vulnerabilidades Críticas/Altas: $critical"
+          echo "Vulnerabilidades Medias: $medium"
 
 #          if [ "$critical" -gt 0 ] || [ "$high" -gt 0 ] || [ "$medium" -gt 0 ]; then
 #            echo "Se encontraron vulnerabilidades Críticas, Altas o Medias en dependencias. Deteniendo el pipeline..."
@@ -164,7 +164,7 @@ jobs:
       - name: Push Docker Image
         run: |
           docker push matesaitban/laboratorio-final:latest
-  # --------------------------------- Image Security ---------------------------------
+  # --------------------------------- Imagen de Seguridad ---------------------------------
 
   ImageSecurity:
     needs: DockerBuild
