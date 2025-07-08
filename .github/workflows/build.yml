@@ -202,11 +202,11 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Docker Pull
-        run: docker pull matesaitban/laboratorio-final:latest*
+        run: docker pull matesaitban/laboratorio-final:latest
 
       - name: Desplegar aplicación
         run: |
-          docker run -d -p 3000:3000 --name devsecops-app matesaitban/laboratorio-final:latest*
+          docker run -d -p 3000:3000 --name devsecops-app matesaitban/laboratorio-final:latest
           sleep 30  # Esperar que arranque correctamente
 
       - name: OWASP ZAP Scan
