@@ -79,7 +79,7 @@ jobs:
 #          fi
 
   # --------------------------------- Analisis de Composición de Software ---------------------------------
-SCA:
+  SCA:
     needs: BUILD
     runs-on: ubuntu-latest
     steps:
